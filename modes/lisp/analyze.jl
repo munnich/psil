@@ -37,7 +37,7 @@ end
 """
 Lisp analyze function. Similar to the original, but optimized for single recordings.
 """
-function analyze(audio, fs::Int, lisp::Vector{Int}, normal::Vector{Int},
+function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
         rest::Vector{Int})
     audiomean = mean(abs.(audio))
 
