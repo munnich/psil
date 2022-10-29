@@ -12,6 +12,9 @@ function calibrate()
     # open a mono microphone stream
     stream = PortAudioStream(1, 0)
 
+    # save sampling frequency
+    fs = stream.sample_rates
+
     # print instructions for the user
     println("Please stay silent for the next 5 seconds!")
 
@@ -24,7 +27,8 @@ function calibrate()
     # close the microphone stream
     close(stream)
 
-    # return the argument to be fed to the analysis function
+    # return fs and the argument to be fed to the analysis function
     # this is just the maximum of the recording in this case
-    return maximum(recording)
+    # this has to be returned as an array/vector
+    return fs, [maximum(recording)]
 end
