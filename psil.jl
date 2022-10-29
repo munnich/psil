@@ -40,7 +40,7 @@ Config file loading function (in case it ends up needing to be more complicated)
 """
 function check_config()
     try
-        return from_toml("config.toml")
+        return from_toml(Config, "config.toml")
     catch
         return
     end
@@ -50,14 +50,13 @@ end
 """
 Infinite loop running the analysis function.
 """
-function loop_analyze(func::Function, N, args...)
+function loop_analyze(func::Function, N, fs, args...)
     # mono mic stream
-    stream = PortAudioStream(1, 0)
-    buf = read(stream, N)
+    stream = PortAudioStream(1, 0, samplerate=fs)
 
     # there's no real alternative to forcing an infinite loop here
     while true
-        read!(stream, buf)
+        buf = read(stream, N)
         func(buf, args...)
     end
 end
@@ -87,18 +86,20 @@ function psil_cli()
             end
             return
         end
+        println("Starting calibration process...")
         # calibrate will return an array containing args in each position
-        args = Base.invokelatest(calibrate)
+        fs, args = Base.invokelatest(calibrate)
 
         # save to config
-        config = from_kwargs(Config, chosen_mode, args)
+        config = from_kwargs(Config, mode=chosen_mode, args=args)
         to_toml("config.toml", config)
     else
+        println("Loading configuration.")
         include("modes/$(config.mode)/analyze.jl")
     end
 
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, config.args...)
+    loop_analyze(analyze, segment_length, fs, config.args...)
 end
 
 

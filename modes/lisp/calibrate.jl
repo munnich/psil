@@ -168,9 +168,9 @@ end
 """
 Calibration function to run on single buffers.
 """
-function calibrate_buf(buf, range)
-    ofinterest = @.abs(fft(buf))[range]
-    peaks = findpeaks(ofinterest, x, max_dist=1000, min_height=maximum(ofinterest) / 4, min_prom=0.0, min_dist=0, threshold=0.0)
+function calibrate_buf(buf, range, x, start)
+    ofinterest = abs.(fft(buf))[range]
+    peaks = findpeaks(ofinterest, x, max_dist=1000, min_height=maximum(ofinterest) / 4)
     return [minimum(peaks), maximum(peaks)] .+ start
 end
 
@@ -192,14 +192,15 @@ function calibrate()
     push!(bufs, read(stream, 3s))
     close(stream)
 
-    println("Done! Runnin calibration.")
-    range = 1000:(fs / 2)
+    println("Done!")
+    range = 1000:trunc(Int, fs / 2)
+    x = (range |> collect)
     results = Array{Vector{Int}}(undef, 3)
     Threads.@threads for i in 1:2
-        results[i] = calibrate_buf(bufs[i], range)
+        results[i] = calibrate_buf(bufs[i], range, x, 1000)
     end
-    args[3] = [1000, trunc(Int, fs / 2)]
+    results[3] = [1000, trunc(Int, fs / 2)]
     # 1 is normal, 2 is lisp, 3 is rest
-    return results
+    return fs, results
 end
 
