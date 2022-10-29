@@ -68,7 +68,7 @@ end
 PSIL CLI function; wrapper around everything else with printed instructions for user.
 """
 function psil_cli()
-    println("Welcome to Process Speech Impedements Live, reading config...")
+    println("Welcome to Process Speech Impediments Live!\nReading config...")
     config = check_config()
 
     if isnothing(config)
