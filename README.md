@@ -32,7 +32,10 @@ julia psil.jl --reconfig
 
 ## Modes
 
-Currently, the only supported mode is (lateral) lisp detection, which can be loaded with the "lisp" prompt.
+Available modes are:
+
+* (lateral) lisp detection: `lisp`
+* basic speech detection via noise gate: `example`
 
 The available modes can always be listed using the program:
 
@@ -48,4 +51,6 @@ Within this folder, a calibration file, `calibrate.jl` and an analysis file, `an
 The calibration algorithm, which should be wrapped inside a function called `calibrate`, needs to take no import and return the arguments to be fed to the analysis algorithm.
 
 The analysis algorithm, which should be wrapped inside a function called `analyze`, needs to take an array containing the audio recording, an integer for the sampling frequency, and then the aforementioned arguments returned by the calibration function.
+
+Within the analysis file, a global variable called `segment_length` needs to be specified. As its name implies, this is the length of audio recording segments that the algorithm function will be run over.
 
