@@ -70,19 +70,25 @@ function psil_cli()
     println("Welcome to Process Speech Impedements Live, reading config...")
     config = check_config()
 
-    if !config
+    if isnothing(config)
         println("No configuration file found. Please enter the mode you'd like to use.")
         chosen_mode = readline()
         # a simple way of handling modular modes is to just use folders for them
         try
             include("modes/$chosen_mode/calibrate.jl") 
             include("modes/$chosen_mode/analyze.jl")
-        catch
-            @error "Mode not found. Please restart and enter the directory name containing the mode's files."
+        catch e
+            if isa(e, SystemError)
+                @error "Mode not found. Please restart and enter the directory name containing the mode's files."
+            elseif isa(e, LoadError)
+                @error "Dependency missing: $e"
+            else
+                @error "An error has occurred: $e"
+            end
             return
         end
         # calibrate will return an array containing args in each position
-        args = calibrate()
+        args = Base.invokelatest(calibrate)
 
         # save to config
         config = from_kwargs(Config, chosen_mode, args)

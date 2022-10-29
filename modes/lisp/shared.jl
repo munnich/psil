@@ -1,4 +1,4 @@
-using FFTW, WAV
+using FFTW
 
 
 """

@@ -1,4 +1,4 @@
-using FFTW, WAV, Statistics, LinearAlgebra, Alert, SampledSignals
+using FFTW, Statistics, LinearAlgebra, Alert, SampledSignals
 
 include("shared.jl")
 
