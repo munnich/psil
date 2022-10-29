@@ -31,6 +31,7 @@ Config struct
     # in case we want to support the user having access to multiple modes
     # we should use one struct per mode
     mode::String
+    fs::Int
     args::Array{}
 end
 
@@ -93,7 +94,7 @@ function psil_cli()
         fs, args = Base.invokelatest(calibrate)
 
         # save to config
-        config = from_kwargs(Config, mode=chosen_mode, args=args)
+        config = from_kwargs(Config, mode=chosen_mode, fs=fs, args=args)
         to_toml("config.toml", config)
     else
         println("Loading configuration.")
@@ -101,7 +102,7 @@ function psil_cli()
     end
 
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, fs, config.args...)
+    loop_analyze(analyze, segment_length, config.fs, config.args...)
 end
 
 

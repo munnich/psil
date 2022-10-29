@@ -9,7 +9,7 @@ using SampledSignals, Alert
 
 # set the segment length for recordings
 # the analysis will be infinitely looped over recordings of this length
-segment_length = 5s
+segment_length = 2s
 
 # define the required analyze function
 # this needs to take the audio recording, sampling frequency, and the 
@@ -22,8 +22,11 @@ function analyze(audio, fs, noise_maximum)
     # go through all recorded values and check if > gate
     above_gate = audio .> gate
 
-    # if any of the values are above the gate, let's throw out a notification
+    # check if any of the recorded values are above the gate
     if any(above_gate)
+        # if so let's print out a message
+        println("Speech detected!")
+        # we can also send out a system notification
         alert("Speech detected!")
     end
 end
