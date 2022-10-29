@@ -53,11 +53,13 @@ Infinite loop running the analysis function.
 function loop_analyze(func::Function, N, fs, args...)
     # mono mic stream
     stream = PortAudioStream(1, 0, samplerate=fs)
+    buf = read(stream, N)
+    Base.invokelatest(func, buf, fs, args...)
 
     # there's no real alternative to forcing an infinite loop here
     while true
-        buf = read(stream, N)
-        func(buf, args...)
+        read!(stream, buf)
+        Base.invokelatest(func, buf, fs, args...)
     end
 end
 
