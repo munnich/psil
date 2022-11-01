@@ -15,7 +15,7 @@ function calibrate(instruct::Function)
     stream = PortAudioStream(1, 0)
 
     # save sampling frequency
-    fs = stream.sample_rates
+    fs = stream.sample_rate
 
     # give the user instructions
     instruct("Please stay silent for the next 5 seconds!")
