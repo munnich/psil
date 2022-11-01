@@ -3,7 +3,7 @@ using FFTW, Statistics, LinearAlgebra, Alert, SampledSignals
 include("shared.jl")
 
 # the segment length for PSIL live recordings
-segment_length = 10s
+segment_length = 5s
 
 
 """
@@ -67,8 +67,12 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
         end
     end
 
+    # with segment_length = 5 s the maximum we can get is 10
+    # we assume that ≥ 5 hits is a sign that something went totally wrong
+    if hits > 4
+        return
     # hits > misses ⇒ lisp
-    if hits > misses
+    elseif hits > misses
         alert("Lisp detected!")
     end
 end
