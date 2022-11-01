@@ -178,21 +178,21 @@ end
 """
 Calibration wrapper to record audio and run through calibrate_buf.
 """
-function calibrate()
+function calibrate(instruct::Function)
     fs = 24000
     stream = PortAudioStream(1, 0; samplerate=fs)
-    println("For the next 5 seconds, make a lisp-free S sound.")
+    instruct("Please make a lisp-free S sound for 5 seconds.")
     # wait for user to read the instructions
     sleep(2)
     # now we actually read the audio
     bufs = [read(stream, 3s)]
     # repeat for lisped sound
-    println("Done! Now, do the same for a lisped S sound.")
+    instruct("Done! Now, do the same for a lisped S sound.")
     sleep(2)
     push!(bufs, read(stream, 3s))
     close(stream)
 
-    println("Done!")
+    instruct("Done!")
     range = 1000:trunc(Int, fs / 2)
     x = (range |> collect)
     results = Array{Vector{Int}}(undef, 3)

@@ -8,21 +8,23 @@
 using PortAudio, SampledSignals
 
 # calibration has to be done via a function called calibrate
-function calibrate()
+# it needs to take an instruction function as input
+# this will be either println for CLI or info_dialog for the GTK GUI
+function calibrate(instruct::Function)
     # open a mono microphone stream
     stream = PortAudioStream(1, 0)
 
     # save sampling frequency
     fs = stream.sample_rates
 
-    # print instructions for the user
-    println("Please stay silent for the next 5 seconds!")
+    # give the user instructions
+    instruct("Please stay silent for the next 5 seconds!")
 
     # read the microphone stream for 5 seconds and save as array
     recording = read(stream, 5s)
 
     # notify the user they can stop staying silent
-    println("Done!")
+    instruct("Done!")
 
     # close the microphone stream
     close(stream)

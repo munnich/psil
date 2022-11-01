@@ -7,7 +7,7 @@ PSIL (Process Speech Impediments Live) is a modular program for speech impedimen
 #### PSIL
 
 ```
-Configurations, PortAudio, SampledSignals, ArgParse
+Configurations, PortAudio, SampledSignals, ArgParse, Gtk
 ```
 
 #### Mode: lisp
@@ -23,6 +23,14 @@ julia psil.jl
 ```
 
 The program will print instructions to the command line.
+
+Alternatively, the program can be run with a small GTK-based GUI:
+
+```
+julia psil.jl --gui
+```
+
+It is, however, recommended to stick to the CLI.
 
 To rerun the configuration process:
 
