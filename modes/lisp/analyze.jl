@@ -3,6 +3,10 @@ using FFTW, Statistics, LinearAlgebra, Alert, SampledSignals
 include("shared.jl")
 
 
+"""
+Return default segment length for lisp analysis.
+5 seconds seems to work pretty fine.
+"""
 function default_segment_length()
     return 5s
 end
@@ -30,7 +34,6 @@ function examinesegment(input::FFTResult, segment::Vector{Int}, rest::Vector{Int
         slicemeanrest = mean(vcat(slicedfft[1:scaledsegment[1]],
                                   slicedfft[scaledsegment[2]:end]))
     end
-    # mean(end) - mean(rest) > 0 ⇒ lisp
     slicemeandiff = slicemean - slicemeanrest
     return slicemeandiff > 0
 end
@@ -69,12 +72,8 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
         end
     end
 
-    # with segment_length = 5 s the maximum we can get is 10
-    # we assume that ≥ 5 hits is a sign that something went totally wrong
-    if hits > 4
-        return
     # hits > misses ⇒ lisp
-    elseif hits > misses
+    if hits > misses
         alert("Lisp detected!")
     end
 end
