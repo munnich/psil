@@ -7,9 +7,12 @@
 # module, which we'll use to send out alerts to the user
 using SampledSignals, Alert
 
-# set the segment length for recordings
+# the segment length for recordings needs to be returned via a function
+# called default_segment_length
 # the analysis will be infinitely looped over recordings of this length
-segment_length = 2s
+function default_segment_length()
+    return 2s
+end
 
 # define the required analyze function
 # this needs to take the audio recording, sampling frequency, and the 

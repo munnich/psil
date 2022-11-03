@@ -60,6 +60,6 @@ The calibration algorithm, which should be wrapped inside a function called `cal
 
 The analysis algorithm, which should be wrapped inside a function called `analyze`, needs to take an array containing the audio recording, an integer for the sampling frequency, and then the aforementioned arguments returned by the calibration function.
 
-Within the analysis file, a global variable called `segment_length` needs to be specified. As its name implies, this is the length of audio recording segments that the algorithm function will be run over.
+Within the analysis file, a function called `default_segment_length` needs to exist. As its name implies, this returns the length of audio recording segments that the algorithm function will be run over.
 
 An example mode can be found in `modes/example`.

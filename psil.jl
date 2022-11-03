@@ -22,6 +22,11 @@ function parse()
         "--gui"
         help = "Launch graphical user interface instead of command line interface."
         action = :store_true
+        "--segment-length"
+        help = "Change segment length. Mainly for debugging."
+        required = false
+        arg_type = Number
+        default = 0
     end
 
     parse_args(s)
@@ -85,7 +90,7 @@ end
 """
 PSIL CLI function; wrapper around everything else with printed instructions for user.
 """
-function psil_cli()
+function psil_cli(segment_length::Number)
     println("Welcome to Process Speech Impediments Live!\nReading config...")
     config = check_config()
 
@@ -113,6 +118,10 @@ function psil_cli()
         include("modes/$(config.mode)/analyze.jl")
     end
 
+    if segment_length == 0
+        segment_length = Base.invokelatest(default_segment_length)
+    end
+
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
     loop_analyze(analyze, segment_length, config.fs, config.args...)
 end
@@ -121,12 +130,12 @@ end
 """
 Simple GTK GUI. No multi-threading (yet?), but should be functional.
 """
-function psil_gui()
+function psil_gui(segment_length::Number)
     # read config
     config = check_config()
 
     # start window
-    win = GtkWindow("Process Speech Impediments Live", 300, 300)
+    win = GtkWindow("Process Speech Impediments Live", 400, 400)
     set_gtk_property!(win, :title, "Process Speech Impediments Live")
     
     # horizontal box array
@@ -134,7 +143,7 @@ function psil_gui()
     push!(win, hbox)
 
     # top text
-    welcome = GtkLabel("Welcome to PSIL!")
+    welcome = GtkLabel("\nWelcome to PSIL!")
     push!(hbox, welcome)
 
     # dropdown menu
@@ -160,6 +169,29 @@ function psil_gui()
     set_gtk_property!(cb, :active, findfirst(isequal(chosen_mode), modes) - 1)
 
     push!(hbox, cb)
+
+    # set default segment length
+    if segment_length == 0
+        # need to grab the val as we have to × 1 s later to support the entry box
+        segment_length = Base.invokelatest(default_segment_length).val
+    end
+
+    # segment length needs a an entry box but this needs a label box too
+    sl_bbox = GtkBox(:h)
+
+    push!(sl_bbox, GtkLabel("Segment length: "))
+
+    # entry box for user to edit the segment length
+    sl_box = GtkEntry()
+    set_gtk_property!(sl_box, :text, segment_length)
+    
+    push!(sl_bbox, sl_box)
+
+    set_gtk_property!(sl_bbox, :spacing, 2)
+
+    push!(sl_bbox, GtkLabel("seconds"))
+    
+    push!(hbox, sl_bbox)
    
     # change mode on dropdown menu change
     signal_connect(cb, "changed") do widget, others...
@@ -167,6 +199,8 @@ function psil_gui()
         chosen_mode = Gtk.bytestring(GAccessor.active_text(cb))
         include("modes/$chosen_mode/calibrate.jl") 
         include("modes/$chosen_mode/analyze.jl")
+        # change the segment length entry box's entry
+        set_gtk_property!(sl_box, :text, Base.invokelatest(default_segment_length).val)
     end
 
     # calibration function for signal_connect
@@ -177,7 +211,8 @@ function psil_gui()
 
     # analysis function for signal_connect
     function _loop_analyze(w::GtkButtonLeaf)
-        loop_analyze(analyze, segment_length, config.fs, config.args...)
+        # this has to use the segment length from its entry box
+        loop_analyze(analyze, get_gtk_property(sl_box, :text, Number) * 1s, config.fs, config.args...)
     end
 
     calibutt = GtkButton("Calibrate")
@@ -190,8 +225,7 @@ function psil_gui()
     signal_connect(_loop_analyze, analbutt, "clicked")
 
     # empty bottom via text label
-    endlabel = GtkLabel("")
-    push!(hbox, endlabel)
+    push!(hbox, GtkLabel(""))
 
     showall(win)
 
@@ -223,11 +257,11 @@ function initialize()
 
     if pargs["gui"]
         println("Starting GUI...")
-        psil_gui()
+        psil_gui(pargs["segment-length"])
         return
     end
 
-    psil_cli()
+    psil_cli(pargs["segment-length"])
 end
 
 initialize()

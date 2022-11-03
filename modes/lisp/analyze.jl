@@ -2,8 +2,10 @@ using FFTW, Statistics, LinearAlgebra, Alert, SampledSignals
 
 include("shared.jl")
 
-# the segment length for PSIL live recordings
-segment_length = 5s
+
+function default_segment_length()
+    return 5s
+end
 
 
 """
