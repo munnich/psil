@@ -212,7 +212,7 @@ function psil_gui(segment_length::Number)
     # analysis function for signal_connect
     function _loop_analyze(w::GtkButtonLeaf)
         # this has to use the segment length from its entry box
-        loop_analyze(analyze, get_gtk_property(sl_box, :text, Number) * 1s, config.fs, config.args...)
+        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, config.args...)
     end
 
     calibutt = GtkButton("Calibrate")
