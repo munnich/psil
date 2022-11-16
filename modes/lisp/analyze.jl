@@ -59,7 +59,7 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
         slice = abs.(audio[i:(i + segmentlength)])
         # use mean to filter out silent segments
         if mean(slice) > audiomean
-            push!(segments, getfft(audio, audiomean, fs))
+            push!(segments, getfft(slice, audiomean, fs))
         end
     end
 
