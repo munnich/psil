@@ -73,7 +73,7 @@ end
 """
 Infinite loop running the analysis function.
 """
-function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, args...)
+function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, condition::Bool, args...)
     # mono mic stream
     stream = PortAudioStream(1, 0, samplerate=fs)
     buf = read(stream, N)
@@ -82,7 +82,7 @@ function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_m
     i = 1
 
     # there's no real alternative to forcing an infinite loop here
-    while true
+    while condition
         read!(stream, buf)
         counter += Base.invokelatest(func, buf, fs, args...)
         println(counter)
@@ -136,7 +136,7 @@ function psil_cli(segment_length::Number)
     max_iterations, notification_message = Base.invokelatest(analysis_values)
 
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, config.args...)
+    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, true, config.args...)
 end
 
 
@@ -216,6 +216,8 @@ function psil_gui(segment_length::Number)
         set_gtk_property!(sl_box, :text, Base.invokelatest(default_segment_length).val)
     end
 
+    spinner = GtkSpinner()
+
     # calibration function for signal_connect
     function _run_calibrate(w::GtkButtonLeaf)
         run_calibrate(chosen_mode, info_dialog)
@@ -223,20 +225,49 @@ function psil_gui(segment_length::Number)
     end
 
     # analysis function for signal_connect
-    function _loop_analyze(w::GtkButtonLeaf)
+    function _loop_analyze(w::GtkButtonLeaf, running)
         max_iterations, notification_message = Base.invokelatest(analysis_values)
         # this has to use the segment length from its entry box
-        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, config.args...)
+        while running
+            continue
+        end
+        #loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, running, config.args...)
     end
+
+    running = true
+
+    analbox = GtkBox(:h)
 
     calibutt = GtkButton("Calibrate")
     analbutt = GtkButton("Start Analyzing")
+    stopbutt = GtkButton("Stop Analyzing")
+
+    push!(analbox, analbutt)
+    push!(analbox, spinner)
+    push!(analbox, stopbutt)
 
     push!(hbox, calibutt)
-    push!(hbox, analbutt)
+    push!(hbox, analbox)
  
     signal_connect(_run_calibrate, calibutt, "clicked")
-    signal_connect(_loop_analyze, analbutt, "clicked")
+
+    signal_connect(analbox, "clicked") do widget
+        running = true
+        start(spinner)
+        Threads.@spawn begin
+            Gtk.GLib.g_idle_add(nothing) do user_data
+                _loop_analyze(analbutt, running)
+                stop(sp)
+                set_gtk_property!(ent, :text, "I counted to $counter in a thread!")
+                Cint(false)
+            end
+        end
+    end
+
+    function _stop_running(w::GtkButtonLeaf)
+        running = false
+    end
+    signal_connect(_stop_running, stopbutt, "clicked")
 
     # empty bottom via text label
     push!(hbox, GtkLabel(""))
