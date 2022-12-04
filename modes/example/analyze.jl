@@ -14,6 +14,11 @@ function default_segment_length()
     return 2s
 end
 
+# return the maximum number of iterations to run (1 here) and the notification message
+function analysis_values()
+    return 1, "Speech detected!"
+end
+
 # define the required analyze function
 # this needs to take the audio recording, sampling frequency, and the 
 # calibration function's returned values
@@ -27,9 +32,10 @@ function analyze(audio, fs, noise_maximum)
 
     # check if any of the recorded values are above the gate
     if any(above_gate)
-        # if so let's print out a message
-        println("Speech detected!")
-        # we can also send out a system notification
-        alert("Speech detected!")
+        # if we've hit our condition we have to return 1
+        return 1
+        # if we didn't and we had >1 max iterations we return -1
+        # alternatively for neutral return 0
     end
+    return 0
 end

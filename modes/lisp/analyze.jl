@@ -5,12 +5,19 @@ include("shared.jl")
 
 """
 Return default segment length for lisp analysis.
-5 seconds seems to work pretty fine.
+0.5 seconds seems to work pretty fine.
 """
 function default_segment_length()
-    return 5s
+    return 0.5s
 end
 
+
+"""
+Return number of segments to analyze and the notification message.
+"""
+function analysis_values()
+    return 10, "Lisping detected!"
+end
 
 """
 Segment examination function from original lisp project.
@@ -63,18 +70,13 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
         end
     end
 
-    hits = misses = 0
     Threads.@threads for segment in segments
         if examinesegment(segment, lisp, rest)
-            hits += 1
+            return 1
         elseif examinesegment(segment, normal, rest)
-            misses += 1
+            return -1
         end
     end
-
-    # hits > misses ⇒ lisp
-    if hits > misses
-        alert("Lisp detected!")
-    end
+    return 0
 end
 

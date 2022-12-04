@@ -1,4 +1,8 @@
 using FFTW, Statistics, LinearAlgebra, PortAudio, SampledSignals
+using Plots
+using FileIO
+
+pyplot()
 
 # https://github.com/tungli/Findpeaks.jl
 """
@@ -179,20 +183,31 @@ end
 Calibration wrapper to record audio and run through calibrate_buf.
 """
 function calibrate(instruct::Function)
-    fs = 24000
+    fs = 44100
     stream = PortAudioStream(1, 0; samplerate=fs)
     instruct("Please make a lisp-free S sound for 5 seconds.")
     # wait for user to read the instructions
     sleep(2)
     # now we actually read the audio
     bufs = [read(stream, 3s)]
+
     # repeat for lisped sound
     instruct("Done! Now, do the same for a lisped S sound.")
     sleep(2)
     push!(bufs, read(stream, 3s))
-    close(stream)
 
     instruct("Done!")
+
+    r = 1:trunc(Int, fs / 2)
+    rc = r |> collect
+    plot(rc, abs.(fft(bufs[1]))[r], title="no lisp")
+    savefig("nolisp.pdf")         
+    FileIO.save("nolisp.wav", bufs[1])
+    plot(rc, abs.(fft(bufs[2]))[r], title="lisp")
+    savefig("lisp.pdf")
+    FileIO.save("lisp.wav", bufs[2])
+    close(stream)
+
     range = 1000:trunc(Int, fs / 2)
     x = (range |> collect)
     results = Array{Vector{Int}}(undef, 3)

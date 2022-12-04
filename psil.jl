@@ -73,16 +73,27 @@ end
 """
 Infinite loop running the analysis function.
 """
-function loop_analyze(func::Function, N, fs, args...)
+function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, args...)
     # mono mic stream
     stream = PortAudioStream(1, 0, samplerate=fs)
     buf = read(stream, N)
-    Base.invokelatest(func, buf, fs, args...)
+    # gotta do this once outside of the infinite loop apparently
+    counter = Base.invokelatest(func, buf, fs, args...)
+    i = 1
 
     # there's no real alternative to forcing an infinite loop here
     while true
         read!(stream, buf)
-        Base.invokelatest(func, buf, fs, args...)
+        counter += Base.invokelatest(func, buf, fs, args...)
+        println(counter)
+        println(i)
+        i += 1
+        if i == max_iterations
+            if counter > 0
+                alert(notification_message)
+            end
+            i = counter = 0
+        end
     end
 end
 
@@ -122,8 +133,10 @@ function psil_cli(segment_length::Number)
         segment_length = Base.invokelatest(default_segment_length)
     end
 
+    max_iterations, notification_message = Base.invokelatest(analysis_values)
+
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, config.fs, config.args...)
+    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, config.args...)
 end
 
 
@@ -211,8 +224,9 @@ function psil_gui(segment_length::Number)
 
     # analysis function for signal_connect
     function _loop_analyze(w::GtkButtonLeaf)
+        max_iterations, notification_message = Base.invokelatest(analysis_values)
         # this has to use the segment length from its entry box
-        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, config.args...)
+        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, config.args...)
     end
 
     calibutt = GtkButton("Calibrate")
