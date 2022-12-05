@@ -70,10 +70,15 @@ function run_calibrate(chosen_mode::String, instruct::Function=println)
 end
 
 
+# global variable to indicate whether to keep analyzing
+# Ref{Bool} tells Julia we want a constant type
+# this way performance isn't impacted (although it still isn't ideal)
+global keeprunning = Ref{Bool}(true)
+
 """
 Infinite loop running the analysis function.
 """
-function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, condition::Bool, args...)
+function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, args...)
     # mono mic stream
     stream = PortAudioStream(1, 0, samplerate=fs)
     buf = read(stream, N)
@@ -81,8 +86,10 @@ function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_m
     counter = Base.invokelatest(func, buf, fs, args...)
     i = 1
 
+    # access keeprunning global variable 
+    global keeprunning
     # there's no real alternative to forcing an infinite loop here
-    while condition
+    while keeprunning[]
         read!(stream, buf)
         counter += Base.invokelatest(func, buf, fs, args...)
         println(counter)
@@ -136,7 +143,7 @@ function psil_cli(segment_length::Number)
     max_iterations, notification_message = Base.invokelatest(analysis_values)
 
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, true, config.args...)
+    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, config.args...)
 end
 
 
@@ -144,6 +151,9 @@ end
 Simple GTK GUI. No multi-threading (yet?), but should be functional.
 """
 function psil_gui(segment_length::Number)
+    # make sure we only ever reference the global keeprunning
+    global keeprunning
+
     # read config
     config = check_config()
 
@@ -225,16 +235,11 @@ function psil_gui(segment_length::Number)
     end
 
     # analysis function for signal_connect
-    function _loop_analyze(w::GtkButtonLeaf, running)
+    function _loop_analyze(w::GtkButtonLeaf)
         max_iterations, notification_message = Base.invokelatest(analysis_values)
         # this has to use the segment length from its entry box
-        while running
-            continue
-        end
-        #loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, running, config.args...)
+        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, config.args...)
     end
-
-    running = true
 
     analbox = GtkBox(:h)
 
@@ -251,12 +256,12 @@ function psil_gui(segment_length::Number)
  
     signal_connect(_run_calibrate, calibutt, "clicked")
 
-    signal_connect(analbox, "clicked") do widget
-        running = true
+    signal_connect(analbutt, "clicked") do widget
         start(spinner)
+        keeprunning[] = true
         Threads.@spawn begin
+            _loop_analyze(analbutt)
             Gtk.GLib.g_idle_add(nothing) do user_data
-                _loop_analyze(analbutt, running)
                 stop(sp)
                 set_gtk_property!(ent, :text, "I counted to $counter in a thread!")
                 Cint(false)
@@ -265,7 +270,9 @@ function psil_gui(segment_length::Number)
     end
 
     function _stop_running(w::GtkButtonLeaf)
-        running = false
+        stop(spinner)
+        keeprunning[] = false
+        println("Stopped")
     end
     signal_connect(_stop_running, stopbutt, "clicked")
 
