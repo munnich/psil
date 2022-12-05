@@ -57,26 +57,43 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
     if std(audio) < 0.05
         return
     end
-    
-    # seglength = 0.5 s seemed to be the best performing in tests
-    segmentlength = trunc(Int, fs * 0.5)
 
-    segments = []
-    Threads.@threads for i in 1:segmentlength:(length(audio) - segmentlength)
-        slice = abs.(audio[i:(i + segmentlength)])
-        # use mean to filter out silent segments
-        if mean(slice) > audiomean
-            push!(segments, getfft(slice, audiomean, fs))
+    # use mean to filter out silent segments
+    segment = getfft(audio, audiomean, fs)
+
+    # multithreaded way of checking both
+    # only do for > 2 since the GUI might require another thread
+    if Threads.nthreads() > 2
+        results = zeros(2)
+        Threads.@threads for i in 1:2
+            if i == 1
+                if examinesegment(segment, lisp, rest)
+                    results[i] = 1
+                end
+            else
+                if examinesegment(segment, normal, rest)
+                    results[i] = 1
+                end
+            end
         end
-    end
-
-    Threads.@threads for segment in segments
+    
+        # lisp ⇒ 1
+        if i[1] == 1
+            return 1
+        # normal ⇒ -1
+        elseif i[2] == 1
+            return -1
+        end
+    # this is more optimal if we don't have enough threads available
+    else
         if examinesegment(segment, lisp, rest)
             return 1
         elseif examinesegment(segment, normal, rest)
             return -1
         end
     end
+
+    # else ⇒ 0
     return 0
 end
 

@@ -30,6 +30,12 @@ Alternatively, the program can be run with a small GTK-based GUI:
 julia psil.jl --gui
 ```
 
+This GUI is best ran with at least two threads:
+
+```
+julia -t2 psil.jl --gui
+```
+
 It is, however, recommended to stick to the CLI.
 
 To rerun the configuration process:
@@ -59,7 +65,10 @@ Within this folder, a calibration file, `calibrate.jl` and an analysis file, `an
 The calibration algorithm, which should be wrapped inside a function called `calibrate`, needs to take no import and return the sampling frequency and the arguments to be fed to the analysis algorithm, which should be in an array.
 
 The analysis algorithm, which should be wrapped inside a function called `analyze`, needs to take an array containing the audio recording, an integer for the sampling frequency, and then the aforementioned arguments returned by the calibration function.
+This function needs to return a number. For all recordings within the total recording length, the number returned by `analyze` are summed up. If the result is greater zero, the notification is sent.
 
 Within the analysis file, a function called `default_segment_length` needs to exist. As its name implies, this returns the length of audio recording segments that the algorithm function will be run over.
+
+Additionally, a function called `analysis_values` must exist and return total number of segments to be recorded before the greater zero condition is checked, along with the notification message to be sent out.
 
 An example mode can be found in `modes/example`.
