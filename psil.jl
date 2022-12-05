@@ -245,36 +245,36 @@ function psil_gui(segment_length::Number)
 
     calibutt = GtkButton("Calibrate")
     analbutt = GtkButton("Start Analyzing")
-    stopbutt = GtkButton("Stop Analyzing")
 
     push!(analbox, analbutt)
     push!(analbox, spinner)
-    push!(analbox, stopbutt)
 
     push!(hbox, calibutt)
     push!(hbox, analbox)
  
     signal_connect(_run_calibrate, calibutt, "clicked")
 
-    signal_connect(analbutt, "clicked") do widget
+    function _start_running(w::GtkButtonLeaf)
+        set_gtk_property!(analbutt, :label, "Stop Analyzing")
+        signal_connect(_stop_running, analbutt, "clicked")
         start(spinner)
         keeprunning[] = true
         Threads.@spawn begin
             _loop_analyze(analbutt)
             Gtk.GLib.g_idle_add(nothing) do user_data
-                stop(sp)
-                set_gtk_property!(ent, :text, "I counted to $counter in a thread!")
+                stop(spinner)
                 Cint(false)
             end
         end
     end
 
+    signal_connect(_start_running, analbutt, "clicked")
+
     function _stop_running(w::GtkButtonLeaf)
-        stop(spinner)
         keeprunning[] = false
-        println("Stopped")
+        set_gtk_property!(analbutt, :label, "Start Analyzing")
+        signal_connect(_start_running, analbutt, "clicked")
     end
-    signal_connect(_stop_running, stopbutt, "clicked")
 
     # empty bottom via text label
     push!(hbox, GtkLabel(""))
