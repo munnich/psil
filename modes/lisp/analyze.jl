@@ -55,7 +55,7 @@ function analyze(audio, fs::Int, normal::Vector{Int}, lisp::Vector{Int},
 
     # use standard deviation to filter out completely silent recordings
     if std(audio) < 0.05
-        return
+        return 0
     end
 
     # use mean to filter out silent segments
