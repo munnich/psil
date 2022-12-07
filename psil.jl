@@ -206,7 +206,7 @@ function psil_gui(segment_length::Number)
 
     # entry box for user to edit the segment length
     sl_box = GtkEntry()
-    set_gtk_property!(sl_box, :text, segment_length)
+    set_gtk_property!(sl_box, :text, string(round(segment_length, digits=3)))
     
     push!(sl_bbox, sl_box)
 
@@ -223,7 +223,7 @@ function psil_gui(segment_length::Number)
         include("modes/$chosen_mode/calibrate.jl") 
         include("modes/$chosen_mode/analyze.jl")
         # change the segment length entry box's entry
-        set_gtk_property!(sl_box, :text, Base.invokelatest(default_segment_length).val)
+        set_gtk_property!(sl_box, :text, string(round(Base.invokelatest(default_segment_length).val, digits=3)))
     end
 
     spinner = GtkSpinner()
