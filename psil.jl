@@ -83,17 +83,17 @@ function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_m
     stream = PortAudioStream(1, 0, samplerate=fs)
     buf = read(stream, N)
     # gotta do this once outside of the infinite loop apparently
-    counter = Base.invokelatest(func, buf, fs, args...)
-    i = 1
+    f = Threads.@spawn Base.invokelatest(func, buf, fs, args...)
+    i = 0
 
     # access keeprunning global variable 
     global keeprunning
     # there's no real alternative to forcing an infinite loop here
     while keeprunning[]
         read!(stream, buf)
-        counter += Base.invokelatest(func, buf, fs, args...)
-        println(counter)
-        println(i)
+
+        counter += fetch(f)
+
         i += 1
         if i == max_iterations
             if counter > 0
@@ -101,6 +101,8 @@ function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_m
             end
             i = counter = 0
         end
+
+        f = Threads.@spawn Base.invokelatest(func, buf, fs, args...)
     end
 end
 
