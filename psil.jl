@@ -85,13 +85,13 @@ function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_m
     # gotta do this once outside of the infinite loop apparently
     f = Threads.@spawn Base.invokelatest(func, buf, fs, args...)
     i = 0
+    counter = fetch(f)
 
     # access keeprunning global variable 
     global keeprunning
     # there's no real alternative to forcing an infinite loop here
     while keeprunning[]
         read!(stream, buf)
-
         counter += fetch(f)
 
         i += 1
