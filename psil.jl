@@ -65,7 +65,7 @@ function loadmode(modepath)
         import sys
         sys.path.insert(0, ".$modepath")
         """
-        pyfunc = pyimport(modepath * "/module.py")
+        pyfunc = pyimport("module.py")
         global analyze = pyfunc["analyze"]
         global calibrate = pyfunc["calibrate"]
         global default_segment_length = pyfunc["default_segment_length "]
