@@ -1,6 +1,7 @@
 using Configurations, PortAudio, SampledSignals
 using ArgParse
 using Gtk
+using PyCall
 
 
 function parse()
@@ -53,6 +54,25 @@ function check_config()
         return from_toml(Config, "config.toml")
     catch
         return
+    end
+end
+
+
+function loadmode(modepath)
+    fnames = readdir(modepath)
+    if any(endswith.(".py", fnames))
+        py"""
+        import sys
+        sys.path.insert(0, ".$modepath")
+        """
+        pyfunc = pyimport(modepath * "/module.py")
+        global analyze = pyfunc["analyze"]
+        global calibrate = pyfunc["calibrate"]
+        global default_segment_length = pyfunc["default_segment_length "]
+        global analysis_values = pyfunc["analysis_values"]
+    else
+        include(modepath * "/analyze.jl")
+        include(modepath * "/calibrate.jl")
     end
 end
 
