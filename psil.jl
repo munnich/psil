@@ -59,8 +59,7 @@ end
 
 
 function loadmode(modepath)
-    fnames = readdir(modepath)
-    if any(endswith.(".py", fnames))
+    if contains(readdir(modepath) |> join, "module.py")
         py"""
         import sys
         sys.path.insert(0, ".$modepath")
