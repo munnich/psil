@@ -58,20 +58,17 @@ function check_config()
 end
 
 
-function loadmode(modepath)
-    if contains(readdir(modepath) |> join, "module.py")
+function loadmode(chosen_mode)
+    modepath = pwd() * "/modes/" * chosen_mode
+    if contains(readdir(modepath, join=true) |> join, ".py")
         py"""
         import sys
-        sys.path.insert(0, ".$modepath")
+        sys.path.insert(0, $modepath)
         """
-        pyfunc = pyimport("module.py")
-        global analyze = pyfunc["analyze"]
-        global calibrate = pyfunc["calibrate"]
-        global default_segment_length = pyfunc["default_segment_length "]
-        global analysis_values = pyfunc["analysis_values"]
+        eval(Meta.parse("global const " * chosen_mode * " = pyimport(\"$chosen_mode\")"))
     else
-        include(modepath * "/analyze.jl")
-        include(modepath * "/calibrate.jl")
+        include("$modepath/$chosen_mode.jl")
+        eval(Meta.parse("import $chosen_mode"))
     end
 end
 
@@ -82,7 +79,7 @@ Calibration wrapper with instruct function input to support both CLI and GUI pro
 function run_calibrate(chosen_mode::String, instruct::Function=println)
     println("Starting calibration process...")
 
-    fs, args = Base.invokelatest(calibrate, instruct)
+    fs, args = Base.invokelatest(eval(Meta.parse("$chosen_mode.calibrate")), instruct)
     config = from_kwargs(Config, mode=chosen_mode, fs=fs, args=args)
     to_toml("config.toml", config)
     return
@@ -97,7 +94,7 @@ global keeprunning = Ref{Bool}(true)
 """
 Infinite loop running the analysis function.
 """
-function loop_analyze(func::Function, N, fs, max_iterations::Int, notification_message::String, args...)
+function loop_analyze(func, N, fs, max_iterations::Int, notification_message::String, args...)
     # mono mic stream
     stream = PortAudioStream(1, 0, samplerate=fs)
     buf = read(stream, N)
@@ -136,8 +133,7 @@ function psil_cli(segment_length::Number)
         chosen_mode = readline()
         # a simple way of handling modular modes is to just use folders for them
         try
-            include("modes/$chosen_mode/calibrate.jl") 
-            include("modes/$chosen_mode/analyze.jl")
+            loadmode(chosen_mode)
         catch e
             if isa(e, SystemError)
                 @error "Mode not found. Please restart and enter the directory name containing the mode's files."
@@ -152,17 +148,17 @@ function psil_cli(segment_length::Number)
         config = check_config()
     else
         println("Loading configuration.")
-        include("modes/$(config.mode)/analyze.jl")
+        loadmode(chosen_mode)
     end
 
     if segment_length == 0
-        segment_length = Base.invokelatest(default_segment_length)
+        segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
     end
 
-    max_iterations, notification_message = Base.invokelatest(analysis_values)
+    max_iterations, notification_message = Base.invokelatest(eval(Meta.parse("$chosen_mode.analysis_values")))
 
     println("Proceeding to analysis. You will be notified whenever a speech impedement issue occurs. To exit, press CTRL+C.")
-    loop_analyze(analyze, segment_length, config.fs, max_iterations, notification_message, config.args...)
+    loop_analyze(eval(Meta.parse("$chosen_mode.analyze")), segment_length, config.fs, max_iterations, notification_message, config.args...)
 end
 
 
@@ -205,8 +201,7 @@ function psil_gui(segment_length::Number)
         chosen_mode = config.mode
     end
 
-    include("modes/$chosen_mode/calibrate.jl") 
-    include("modes/$chosen_mode/analyze.jl")
+    loadmode(chosen_mode)
 
     set_gtk_property!(cb, :active, findfirst(isequal(chosen_mode), modes) - 1)
 
@@ -239,8 +234,7 @@ function psil_gui(segment_length::Number)
     signal_connect(cb, "changed") do widget, others...
         idx = get_gtk_property(cb, "active", Int)
         chosen_mode = Gtk.bytestring(GAccessor.active_text(cb))
-        include("modes/$chosen_mode/calibrate.jl") 
-        include("modes/$chosen_mode/analyze.jl")
+        loadmode(chosen_mode)
         # change the segment length entry box's entry
         set_gtk_property!(sl_box, :text, string(round(Base.invokelatest(default_segment_length).val, digits=3)))
     end
