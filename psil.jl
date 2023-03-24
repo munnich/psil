@@ -215,19 +215,23 @@ function psil_gui(segment_length::Number)
     end
 
     # segment length needs a an entry box but this needs a label box too
-    sl_bbox = GtkBox(:h)
+    sl_bbox = GtkBox(:v)
 
-    push!(sl_bbox, GtkLabel("Segment length: "))
+    push!(sl_bbox, GtkLabel("Segment length [s]: "))
 
     # entry box for user to edit the segment length
     sl_box = GtkEntry()
     set_gtk_property!(sl_box, :text, string(round(segment_length, digits=3)))
+
+    sc = Gtk.GAccessor.style_context(sl_box)
+    pr = Gtk.CssProviderLeaf(data="entry { min-width: 0px; }")
+    push!(sc, Gtk.StyleProvider(pr), 777)
     
     push!(sl_bbox, sl_box)
 
     set_gtk_property!(sl_bbox, :spacing, 2)
 
-    push!(sl_bbox, GtkLabel("seconds"))
+    # push!(sl_bbox, GtkLabel(" seconds"))
     
     push!(hbox, sl_bbox)
    
