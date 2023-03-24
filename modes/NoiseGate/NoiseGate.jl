@@ -1,4 +1,4 @@
-module Example
+module NoiseGate
     #=
     # To detect speech, we need a calibration in which room noise is recorded.
     # We'll then set a gate slightly above the maximum of the room noise.

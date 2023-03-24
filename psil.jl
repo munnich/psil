@@ -210,7 +210,7 @@ function psil_gui(segment_length::Number)
 
     # set default mode
     if isnothing(config)
-        chosen_mode = "lisp"
+        chosen_mode = "Lisp"
     else
         chosen_mode = config.mode
     end
