@@ -2,6 +2,8 @@ using Configurations, PortAudio, SampledSignals
 using ArgParse
 using Gtk
 using PyCall
+import REPL
+using REPL.TerminalMenus
 
 
 function parse()
@@ -17,13 +19,13 @@ function parse()
         "--reconfig"
         help = "Rerun the configuration by deleting current configuration file; reselect the mode and recalibrate."
         action = :store_true
-        "--list-modes"
+        "--list-modes", "-l"
         help = "List available modes."
         action = :store_true
-        "--gui"
+        "--gui", "-g"
         help = "Launch graphical user interface instead of command line interface."
         action = :store_true
-        "--segment-length"
+        "--segment-length", "-s"
         help = "Change segment length. Mainly for debugging."
         required = false
         arg_type = Number
@@ -131,8 +133,15 @@ function psil_cli(segment_length::Number)
     config = check_config()
 
     if isnothing(config)
-        println("No configuration file found. Please enter the mode you'd like to use.")
-        chosen_mode = readline()
+        options = readdir("modes")
+        menu = RadioMenu(options, pagesize=5)
+        choice = request("No configuration file found. Please enter the mode you'd like to use.", menu)
+        if choice != -1
+            chosen_mode = options[choice]
+        else
+            println("Exiting.")
+            exit()
+        end
         # a simple way of handling modular modes is to just use folders for them
         try
             loadmode(chosen_mode)
@@ -156,7 +165,9 @@ function psil_cli(segment_length::Number)
     if segment_length == 0
         segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
     end
-    segment_length *= 1s
+    if typeof(segment_length) in [Float64, Int64]
+        segment_length *= 1s
+    end
 
     max_iterations, notification_message = Base.invokelatest(eval(Meta.parse("$chosen_mode.analysis_values")))
 
@@ -214,7 +225,9 @@ function psil_gui(segment_length::Number)
     if segment_length == 0
         # need to grab the val as we have to × 1 s later to support the entry box
         segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
-        segment_length *= 1s
+        if typeof(segment_length) in [Float64, Int64]
+            segment_length *= 1s
+        end
         segment_length = segment_length.val
     end
 
@@ -246,7 +259,9 @@ function psil_gui(segment_length::Number)
         loadmode(chosen_mode)
         # change the segment length entry box's entry
         segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
-        segment_length *= 1s
+        if typeof(segment_length) in [Float64, Int64]
+            segment_length *= 1s
+        end
         segment_length = segment_length.val
         set_gtk_property!(sl_box, :text, string(round(segment_length, digits=3)))
     end

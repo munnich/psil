@@ -25,8 +25,6 @@ module Lisp
     end
     
     
-    pyplot()
-    
     # https://github.com/tungli/Findpeaks.jl
     """
     `findpeaks(y::Array{T},
