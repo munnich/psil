@@ -68,7 +68,7 @@ function loadmode(chosen_mode)
         eval(Meta.parse("global const " * chosen_mode * " = pyimport(\"$chosen_mode\")"))
     else
         include("$modepath/$chosen_mode.jl")
-        eval(Meta.parse("import $chosen_mode"))
+        eval(Meta.parse("import .$chosen_mode"))
     end
 end
 
@@ -108,8 +108,6 @@ function loop_analyze(func, N, fs, max_iterations::Int, notification_message::St
     while keeprunning[]
         read!(stream, buf)
         counter += Base.invokelatest(func, buf, fs, args...)
-        println(counter)
-        println(i)
         i += 1
         if i == max_iterations
             if counter > 0
@@ -154,6 +152,7 @@ function psil_cli(segment_length::Number)
     if segment_length == 0
         segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
     end
+    segment_length *= 1s
 
     max_iterations, notification_message = Base.invokelatest(eval(Meta.parse("$chosen_mode.analysis_values")))
 
