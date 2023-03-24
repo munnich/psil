@@ -65,7 +65,7 @@ function loadmode(chosen_mode)
         import sys
         sys.path.insert(0, $modepath)
         """
-        eval(Meta.parse("global const " * chosen_mode * " = pyimport(\"$chosen_mode\")"))
+        eval(Meta.parse("global " * chosen_mode * " = pyimport(\"$chosen_mode\")"))
     else
         include("$modepath/$chosen_mode.jl")
         eval(Meta.parse("import .$chosen_mode"))
@@ -209,7 +209,9 @@ function psil_gui(segment_length::Number)
     # set default segment length
     if segment_length == 0
         # need to grab the val as we have to × 1 s later to support the entry box
-        segment_length = Base.invokelatest(default_segment_length).val
+        segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
+        segment_length *= 1s
+        segment_length = segment_length.val
     end
 
     # segment length needs a an entry box but this needs a label box too
@@ -235,7 +237,10 @@ function psil_gui(segment_length::Number)
         chosen_mode = Gtk.bytestring(GAccessor.active_text(cb))
         loadmode(chosen_mode)
         # change the segment length entry box's entry
-        set_gtk_property!(sl_box, :text, string(round(Base.invokelatest(default_segment_length).val, digits=3)))
+        segment_length = Base.invokelatest(eval(Meta.parse("$chosen_mode.default_segment_length")))
+        segment_length *= 1s
+        segment_length = segment_length.val
+        set_gtk_property!(sl_box, :text, string(round(segment_length, digits=3)))
     end
 
     spinner = GtkSpinner()
@@ -248,9 +253,9 @@ function psil_gui(segment_length::Number)
 
     # analysis function for signal_connect
     function _loop_analyze(w::GtkButtonLeaf)
-        max_iterations, notification_message = Base.invokelatest(analysis_values)
+        max_iterations, notification_message = Base.invokelatest(eval(Meta.parse("$chosen_mode.analysis_values")))
         # this has to use the segment length from its entry box
-        loop_analyze(analyze, Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, config.args...)
+        loop_analyze(eval(Meta.parse("$chosen_mode.analyze")), Base.parse(Float64, get_gtk_property(sl_box, :text, String)) * 1s, config.fs, max_iterations, notification_message, config.args...)
     end
 
     analbox = GtkBox(:h)
