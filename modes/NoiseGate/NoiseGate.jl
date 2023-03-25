@@ -1,12 +1,13 @@
 module NoiseGate
+    # load the PortAudio and SampledSignals modules to record audio
+    # also load Alert to send out notifications to the user
+    using PortAudio, SampledSignals, Alert
+    
     #=
     # To detect speech, we need a calibration in which room noise is recorded.
     # We'll then set a gate slightly above the maximum of the room noise.
     # As such, we only need to save the maximum of the room noise.
     =#
-    
-    # load the PortAudio and SampledSignals modules
-    using PortAudio, SampledSignals
     
     # calibration has to be done via a function called calibrate
     # it needs to take an instruction function as input
@@ -40,10 +41,6 @@ module NoiseGate
     # The analysis part of this just needs to check if any of the values within the
     # stream are above the noise gate.
     =#
-    
-    # load SampledSignals module, which we will always need, along with the Alert
-    # module, which we'll use to send out alerts to the user
-    using SampledSignals, Alert
     
     # the segment length for recordings needs to be returned via a function
     # called default_segment_length
