@@ -4,16 +4,8 @@ PSIL (Process Speech Impediments Live) is a modular program for speech impedimen
 
 ## Requirements
 
-#### PSIL
-
 ```
-Configurations, PortAudio, SampledSignals, ArgParse, Gtk, PyCall
-```
-
-#### Mode: lisp
-
-```
-FFTW, Statistics, LinearAlgebra, Alert
+Configurations, PortAudio, SampledSignals, ArgParse, Gtk, PyCall, Alert, FFTW, Statistics, LinearAlgebra
 ```
 
 ## Usage
@@ -48,8 +40,8 @@ julia psil.jl --reconfig
 
 Available modes are:
 
-* (lateral) lisp detection based on [Munnich et al.](https://github.com/munnich/lateral-lisp): `Lisp`
-* basic speech detection via noise gate: `Example`
+* lateral lisp detection: `Lisp`
+* basic speech detection via noise gate: `NoiseGate`
 * clipping detection: `Clipping`
 
 The available modes can always be listed using the program:
@@ -59,8 +51,6 @@ julia psil.jl --list-modes
 ```
 
 ### Adding modes
-
-TODO: update with modules and python instructions
 
 Modes can easily be added by creating a directory in the `modes` folder with the mode's name, containing a module with a matching name, either written in Julia or Python.
 
@@ -73,3 +63,4 @@ The module must consist of at least four functions:
 When PSIL starts analyzing, it runs `analyze` until the desired segment number as given in `analysis_values` is reached, then sums the results. If the result is greater zero, the notification message given in `analysis_values` is sent out via the operating system's alert system.
 
 Example modes can be found in `modes/NoiseGate` for Julia and `modes/Clipping` for Python.
+
