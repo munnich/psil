@@ -62,16 +62,14 @@ julia psil.jl --list-modes
 
 TODO: update with modules and python instructions
 
-Modes can easily be added by creating a directory in the `modes` folder with the mode's name.
-Within this folder, a calibration file, `calibrate.jl` and an analysis file, `analyze.jl` should be present.
+Modes can easily be added by creating a directory in the `modes` folder with the mode's name, containing a module with a matching name, either written in Julia or Python.
 
-The calibration algorithm, which should be wrapped inside a function called `calibrate`, needs to take no import and return the sampling frequency and the arguments to be fed to the analysis algorithm, which should be in an array.
+The module must consist of at least four functions:
+* `calibrate`: A calibration function taking an instruction function, which is fed a string, as input, and returning the desired sampling frequency along with any calibrated parameters to be passed on. All audio recording necessary for calibration must be handled within the function.
+* `default_segment_length`: A function taking no input parameters and returning the desired segment length to use for the mode, either as a number, which is interpreted in seconds, or a `Unitful.Quantity` as in `SampledSignals.jl`, e.g. 1s for 1 second.
+* `analysis_values`: A function taking no input parameters and returning the desired number of segments to be analyzed before result analysis is performed, along with a string containing the notification message if the result is positive.
+* `analyze`: The main analysis function, which takes an audio array, the sampling frequency, and any calibration parameters returned by `calibrate`. The function must return `1` for positive results, `0` for neutral results, and `-1` for negative results.
 
-The analysis algorithm, which should be wrapped inside a function called `analyze`, needs to take an array containing the audio recording, an integer for the sampling frequency, and then the aforementioned arguments returned by the calibration function.
-This function needs to return a number. For all recordings within the total recording length, the number returned by `analyze` are summed up. If the result is greater zero, the notification is sent.
+When PSIL starts analyzing, it runs `analyze` until the desired segment number as given in `analysis_values` is reached, then sums the results. If the result is greater zero, the notification message given in `analysis_values` is sent out via the operating system's alert system.
 
-Within the analysis file, a function called `default_segment_length` needs to exist. As its name implies, this returns the length of audio recording segments that the algorithm function will be run over.
-
-Additionally, a function called `analysis_values` must exist and return total number of segments to be recorded before the greater zero condition is checked, along with the notification message to be sent out.
-
-An example mode can be found in `modes/example`.
+Example modes can be found in `modes/NoiseGate` for Julia and `modes/Clipping` for Python.
