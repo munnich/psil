@@ -42,6 +42,8 @@ def analyze(audio: List[int],
     """
     # audio is signed
     maximum: int = 2 ** bit_depth / 2 - 1
-    if any([sample == maximum for sample in audio]):
+    minimum: int = -1 * maximum - 1
+    if any([sample == maximum or sample == minimum for sample in audio]):
         return 1
     return 0
+
