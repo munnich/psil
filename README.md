@@ -48,7 +48,7 @@ julia psil.jl --reconfig
 
 Available modes are:
 
-* (lateral) lisp detection based on [Munnich et al.](https://github.com/munnich/lateral-lisp): `lisp`
+* (lateral) lisp detection based on Munnich, P., Dederichs, S., Klein, P. & Bruno Figura, C. (2023). Speech Intelligibility: Lateral Lisp Detection for Real-Time Monitoring. Current Directions in Biomedical Engineering, 9(1), 283-286. https://doi.org/10.1515/cdbme-2023-1071: `lisp`
 * basic speech detection via noise gate: `example`
 
 The available modes can always be listed using the program:
